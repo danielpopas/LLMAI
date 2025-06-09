@@ -1,7 +1,0 @@
-# Ignore root workspace files to prevent conflicts
-package.json.bak
-package-lock.json.bak
-node_modules/
-
-# Ignore server directory
-server/
