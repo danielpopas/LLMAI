@@ -1,0 +1,10 @@
+# Ignore root package.json to prevent workspace conflicts
+package.json
+package-lock.json
+node_modules/
+
+# Ignore server directory
+server/
+
+# Keep only client directory for deployment
+!client/
