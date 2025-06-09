@@ -5,13 +5,18 @@ const nextConfig: NextConfig = {
 	experimental: {
 		reactCompiler: false,
 	},
-	// Оптимизация для SPA
+	// Оптимизация для деплоя
 	trailingSlash: true,
 	images: {
 		unoptimized: true,
 	},
-	// Настройки для Vercel деплоя
-	output: 'standalone',
+	// Настройки для Vercel
+	eslint: {
+		ignoreDuringBuilds: false,
+	},
+	typescript: {
+		ignoreBuildErrors: false,
+	},
 }
 
 export default nextConfig
