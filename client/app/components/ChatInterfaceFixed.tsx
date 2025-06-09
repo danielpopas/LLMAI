@@ -9,12 +9,20 @@ import ToolsPanel from './ToolsPanel'
 import FutureModels from './FutureModels'
 import { useLocalStorage } from '../hooks/useLocalStorage'
 
+export interface ImageAttachment {
+	file: File
+	preview: string
+	extractedText?: string
+}
+
 export interface Message {
 	id: string
 	role: 'user' | 'assistant'
 	content: string
 	timestamp: Date
 	model?: string
+	image?: ImageAttachment
+	isTextExtraction?: boolean
 }
 
 export type ClaudeModel = 'claude-opus-4' | 'claude-sonnet-4'
@@ -28,16 +36,47 @@ export default function ChatInterfaceFixed() {
 	const messagesEndRef = useRef<HTMLDivElement>(null)
 
 	// Типизация для сохраненных сообщений
-	type StoredMessage = Omit<Message, 'timestamp'> & { timestamp: string }
+	type StoredMessage = Omit<Message, 'timestamp' | 'image'> & {
+		timestamp: string
+		image?: Omit<ImageAttachment, 'file'> & {
+			fileName: string;
+			fileSize: number;
+			fileData?: string; // base64 данные файла
+		}
+	}
 
 	// Безопасная работа с localStorage через кастомный хук
 	const [storedMessages, setStoredMessages, clearStoredMessages, isHydrated] =
 		useLocalStorage<StoredMessage[]>('ai-chat-history', [])
 
+	// Функция для восстановления файла из base64
+	const restoreFileFromBase64 = (base64Data: string, fileName: string): File => {
+		try {
+			const byteCharacters = atob(base64Data.split(',')[1])
+			const byteNumbers = new Array(byteCharacters.length)
+			for (let i = 0; i < byteCharacters.length; i++) {
+				byteNumbers[i] = byteCharacters.charCodeAt(i)
+			}
+			const byteArray = new Uint8Array(byteNumbers)
+			return new File([byteArray], fileName, { type: 'image/jpeg' })
+		} catch (error) {
+			console.error('Error restoring file from base64:', error)
+			return new File([], fileName, { type: 'image/jpeg' })
+		}
+	}
+
 	// Конвертация сохраненных сообщений в правильный формат
 	const messages = storedMessages.map(msg => ({
 		...msg,
 		timestamp: new Date(msg.timestamp),
+		// Восстанавливаем изображение с реальным файлом если есть данные
+		image: msg.image ? {
+			file: msg.image.fileData
+				? restoreFileFromBase64(msg.image.fileData, msg.image.fileName || 'image.jpg')
+				: new File([], msg.image.fileName || 'image.jpg', { type: 'image/jpeg' }),
+			preview: msg.image.preview,
+			extractedText: msg.image.extractedText,
+		} : undefined,
 	}))
 
 	// Загрузка Puter.js SDK без принудительной авторизации
@@ -74,25 +113,68 @@ export default function ChatInterfaceFixed() {
 		scrollToBottom()
 	}, [messages])
 
+	// Функция для конвертации файла в base64
+	const fileToBase64 = (file: File): Promise<string> => {
+		return new Promise((resolve, reject) => {
+			const reader = new FileReader()
+			reader.readAsDataURL(file)
+			reader.onload = () => resolve(reader.result as string)
+			reader.onerror = error => reject(error)
+		})
+	}
+
+	// Функция-помощник для сохранения сообщений
+	const saveMessages = async (messagesToSave: Message[]) => {
+		const messagesToStore = await Promise.all(messagesToSave.map(async msg => {
+			let imageData = undefined
+
+			if (msg.image && msg.image.file.size > 0) {
+				try {
+					const base64Data = await fileToBase64(msg.image.file)
+					imageData = {
+						preview: msg.image.preview,
+						fileName: msg.image.file.name,
+						fileSize: msg.image.file.size,
+						extractedText: msg.image.extractedText,
+						fileData: base64Data,
+					}
+				} catch (error) {
+					console.error('Error converting file to base64:', error)
+					imageData = {
+						preview: msg.image.preview,
+						fileName: msg.image.file.name,
+						fileSize: msg.image.file.size,
+						extractedText: msg.image.extractedText,
+					}
+				}
+			}
+
+			return {
+				...msg,
+				timestamp: msg.timestamp.toISOString(),
+				image: imageData,
+			}
+		}))
+
+		setStoredMessages(messagesToStore)
+	}
+
 	// Отправка сообщения
-	const sendMessage = async (content: string) => {
-		if (!isPuterLoaded || !window.puter || !content.trim()) return
+	const sendMessage = async (content: string, image?: ImageAttachment) => {
+		if (!isPuterLoaded || !window.puter || (!content.trim() && !image)) return
 
 		const userMessage: Message = {
 			id: Date.now().toString(),
 			role: 'user',
-			content: content.trim(),
+			content: content.trim() || (image ? 'Изображение загружено' : ''),
 			timestamp: new Date(),
+			image: image,
 		}
 
 		const newMessages = [...messages, userMessage]
 
-		// Сохраняем сообщения с правильным форматом timestamp
-		const messagesToStore = newMessages.map(msg => ({
-			...msg,
-			timestamp: msg.timestamp.toISOString(),
-		}))
-		setStoredMessages(messagesToStore)
+		// Сохраняем сообщения
+		await saveMessages(newMessages)
 		setIsLoading(true)
 
 		try {
@@ -101,14 +183,87 @@ export default function ChatInterfaceFixed() {
 				throw new Error('Puter.js не загружен')
 			}
 
-			// Отправка запроса к Claude через Puter.js
-			// Авторизация произойдет автоматически при необходимости
-			const response = await window.puter.ai.chat(content, {
-				model: selectedModel,
-				stream: false,
+			console.log('Puter.js status:', {
+				puter: !!window.puter,
+				ai: !!window.puter.ai,
+				chat: !!window.puter.ai.chat,
+				img2txt: !!window.puter.ai.img2txt
 			})
 
+			console.log('Sending message with image:', !!image, 'content:', content)
+
+			let response: any
+
+			// Если есть изображение, используем chat API с изображением
+			if (image && image.preview) {
+				console.log('Using chat API with image, preview URL:', image.preview)
+
+				// Проверяем, что preview это data URL
+				if (!image.preview.startsWith('data:')) {
+					throw new Error('Изображение должно быть в формате data URL')
+				}
+
+				try {
+					// Извлекаем MIME тип и base64 данные из data URL
+					const mimeMatch = image.preview.match(/^data:([^;]+);base64,(.+)$/)
+					if (!mimeMatch) {
+						throw new Error('Неверный формат data URL изображения')
+					}
+
+					const mimeType = mimeMatch[1]
+					const base64Data = mimeMatch[2]
+
+					// Используем messages array формат для Claude API
+					const messages = [
+						{
+							role: 'user',
+							content: [
+								{
+									type: 'text',
+									text: content || 'Опиши это изображение подробно'
+								},
+								{
+									type: 'image',
+									source: {
+										type: 'base64',
+										media_type: mimeType,
+										data: base64Data
+									}
+								}
+							]
+						}
+					]
+
+					console.log('Sending messages to Claude:', {
+						messageCount: messages.length,
+						contentItems: messages[0].content.length,
+						mimeType,
+						dataLength: base64Data.length
+					})
+
+					response = await window.puter.ai.chat(messages, false, {
+						model: selectedModel,
+						stream: false,
+					})
+
+					console.log('Chat API response:', response)
+				} catch (apiError) {
+					console.error('Chat API error:', apiError)
+					console.error('API Error details:', JSON.stringify(apiError, null, 2))
+					throw new Error(`Ошибка API: ${JSON.stringify(apiError)}`)
+				}
+			} else {
+				console.log('Using regular chat API')
+				// Обычный текстовый запрос
+				response = await window.puter.ai.chat(content, {
+					model: selectedModel,
+					stream: false,
+				})
+			}
+
 			// Обработка ответа с правильной типизацией
+			console.log('Processing response:', typeof response, response)
+
 			let responseText: string
 			if (typeof response === 'string') {
 				responseText = response
@@ -117,11 +272,29 @@ export default function ChatInterfaceFixed() {
 				typeof response === 'object' &&
 				'message' in response
 			) {
-				responseText =
-					response.message?.content?.[0]?.text || 'Ошибка получения ответа'
+				// Ответ от chat API
+				if (response.message?.content?.[0]?.text) {
+					responseText = response.message.content[0].text
+				} else if (response.message?.content) {
+					responseText = String(response.message.content)
+				} else {
+					responseText = String(response.message || response)
+				}
+			} else if (
+				response &&
+				typeof response === 'object' &&
+				'text' in response
+			) {
+				// Ответ от img2txt API
+				responseText = response.text || 'Ошибка получения ответа'
+			} else if (response && typeof response === 'object') {
+				// Попытка извлечь любой текстовый контент
+				responseText = JSON.stringify(response)
 			} else {
 				responseText = 'Неожиданный формат ответа'
 			}
+
+			console.log('Final response text:', responseText)
 
 			const assistantMessage: Message = {
 				id: (Date.now() + 1).toString(),
@@ -129,33 +302,125 @@ export default function ChatInterfaceFixed() {
 				content: responseText,
 				timestamp: new Date(),
 				model: selectedModel,
+				isTextExtraction: image ? true : false,
 			}
 
 			const finalMessages = [...newMessages, assistantMessage]
 
 			// Сохраняем финальные сообщения
-			const finalMessagesToStore = finalMessages.map(msg => ({
-				...msg,
-				timestamp: msg.timestamp.toISOString(),
-			}))
-			setStoredMessages(finalMessagesToStore)
+			await saveMessages(finalMessages)
 		} catch (error) {
 			console.error('Ошибка отправки сообщения:', error)
+
+			let errorText = 'Извините, произошла ошибка при обработке вашего запроса.'
+
+			if (error instanceof Error) {
+				errorText += ` Детали: ${error.message}`
+				console.error('Error details:', error.stack)
+			} else if (typeof error === 'string') {
+				errorText += ` Детали: ${error}`
+			} else {
+				console.error('Unknown error type:', error)
+			}
+
 			const errorMessage: Message = {
 				id: (Date.now() + 1).toString(),
 				role: 'assistant',
-				content:
-					'Извините, произошла ошибка при обработке вашего запроса. Пожалуйста, попробуйте еще раз.',
+				content: errorText,
 				timestamp: new Date(),
 				model: selectedModel,
 			}
 
 			const errorMessages = [...newMessages, errorMessage]
-			const errorMessagesToStore = errorMessages.map(msg => ({
-				...msg,
-				timestamp: msg.timestamp.toISOString(),
-			}))
-			setStoredMessages(errorMessagesToStore)
+			await saveMessages(errorMessages)
+		} finally {
+			setIsLoading(false)
+		}
+	}
+
+	// Извлечение текста из изображения
+	const extractTextFromImage = async (image: ImageAttachment) => {
+		if (!isPuterLoaded || !window.puter || !window.puter.ai) {
+			console.error('Puter.js not loaded or AI not available')
+			return
+		}
+
+		setIsLoading(true)
+
+		try {
+			console.log('Starting text extraction from image:', {
+				hasFile: !!image.file,
+				fileSize: image.file?.size,
+				fileName: image.file?.name,
+				hasPreview: !!image.preview
+			})
+
+			// Проверяем, что у нас есть реальный файл
+			if (!image.file || image.file.size === 0) {
+				throw new Error('Файл изображения недоступен. Попробуйте загрузить изображение заново.')
+			}
+
+			let extractedText: string
+
+			// img2txt API ожидает URL изображения, а не File объект
+			// Используем preview (data URL) для всех случаев
+			console.log('Using img2txt API with preview URL...')
+
+			if (!image.preview || !image.preview.startsWith('data:')) {
+				throw new Error('Изображение должно быть в формате data URL')
+			}
+
+			const response = await window.puter.ai.img2txt(image.preview, false)
+
+			console.log('img2txt API response:', response, 'type:', typeof response)
+
+			// img2txt возвращает строку с извлеченным текстом
+			extractedText = typeof response === 'string' ? response : 'Не удалось извлечь текст из изображения'
+
+			console.log('Final extracted text:', extractedText)
+
+			// Создаем сообщение с извлеченным текстом
+			const extractionMessage: Message = {
+				id: Date.now().toString(),
+				role: 'assistant',
+				content: `📝 **Извлеченный текст из изображения:**\n\n${extractedText}`,
+				timestamp: new Date(),
+				model: selectedModel,
+				isTextExtraction: true,
+			}
+
+			const newMessages = [...messages, extractionMessage]
+			await saveMessages(newMessages)
+
+		} catch (error) {
+			console.error('Ошибка извлечения текста:', error)
+			console.error('Error type:', typeof error)
+			console.error('Error details:', {
+				message: error?.message,
+				stack: error?.stack,
+				name: error?.name
+			})
+
+			let errorText = 'Извините, произошла ошибка при извлечении текста из изображения.'
+
+			if (error instanceof Error) {
+				errorText += ` Детали: ${error.message}`
+			} else if (typeof error === 'string') {
+				errorText += ` Детали: ${error}`
+			} else if (error && typeof error === 'object') {
+				errorText += ` Детали: ${JSON.stringify(error)}`
+			}
+
+			const errorMessage: Message = {
+				id: Date.now().toString(),
+				role: 'assistant',
+				content: errorText,
+				timestamp: new Date(),
+				model: selectedModel,
+			}
+
+			const errorMessages = [...messages, errorMessage]
+			await saveMessages(errorMessages)
 		} finally {
 			setIsLoading(false)
 		}
@@ -308,7 +573,11 @@ export default function ChatInterfaceFixed() {
 
 				{/* Область сообщений */}
 				<div className='chat-messages'>
-					<MessageList messages={messages} isLoading={isLoading} />
+					<MessageList
+						messages={messages}
+						isLoading={isLoading}
+						onExtractText={extractTextFromImage}
+					/>
 					<div ref={messagesEndRef} />
 				</div>
 

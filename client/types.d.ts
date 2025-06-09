@@ -8,7 +8,20 @@ declare global {
       }
       ai: {
         chat: (
-          content: string,
+          content: string | Array<{
+            role: string;
+            content: string | Array<{
+              type: string;
+              text?: string;
+              source?: {
+                type: string;
+                media_type: string;
+                data: string;
+              };
+            }>;
+          }>,
+          imageOrTestModeOrOptions?: string | File | Blob | boolean | { model?: string; stream?: boolean },
+          testModeOrOptions?: boolean | { model?: string; stream?: boolean },
           options?: { model?: string; stream?: boolean }
         ) => Promise<
           | {
@@ -22,6 +35,10 @@ declare global {
           text: string,
           options?: { voice?: string }
         ) => Promise<Blob>
+        img2txt: (
+          image: string | File | Blob,
+          testMode?: boolean
+        ) => Promise<string>
       }
     }
   }

@@ -1,15 +1,16 @@
 // client/app/components/MessageList.tsx
 'use client'
 
-import { Message } from './ChatInterfaceFixed'
+import { Message, ImageAttachment } from './ChatInterfaceFixed'
 import TextToSpeech from './TextToSpeech'
 
 interface MessageListProps {
 	messages: Message[]
 	isLoading: boolean
+	onExtractText?: (image: ImageAttachment) => void
 }
 
-export default function MessageList({ messages, isLoading }: MessageListProps) {
+export default function MessageList({ messages, isLoading, onExtractText }: MessageListProps) {
 	const formatTime = (timestamp: Date) => {
 		return timestamp.toLocaleTimeString('ru-RU', {
 			hour: '2-digit',
@@ -61,16 +62,71 @@ export default function MessageList({ messages, isLoading }: MessageListProps) {
 						{/* Заголовок сообщения */}
 						{message.role === 'assistant' && (
 							<div className='message-model'>
-								{message.model === 'claude-opus-4'
-									? '🧠 Claude Opus 4'
-									: '⚡ Claude Sonnet 4'}
+								{message.isTextExtraction ? (
+									<span className='flex items-center gap-2'>
+										📝 Анализ изображения •
+										{message.model === 'claude-opus-4'
+											? '🧠 Claude Opus 4'
+											: '⚡ Claude Sonnet 4'}
+									</span>
+								) : (
+									<span>
+										{message.model === 'claude-opus-4'
+											? '🧠 Claude Opus 4'
+											: '⚡ Claude Sonnet 4'}
+									</span>
+								)}
+							</div>
+						)}
+
+						{/* Изображение (если есть) */}
+						{message.image && (
+							<div className='mb-3'>
+								<div className='relative inline-block'>
+									<img
+										src={message.image.preview}
+										alt="Прикрепленное изображение"
+										className='max-w-sm max-h-64 object-contain rounded-lg border border-gray-600'
+									/>
+									{/* Кнопка извлечения текста */}
+									{message.role === 'user' && onExtractText && (
+										<button
+											onClick={() => onExtractText(message.image!)}
+											className='absolute top-2 right-2 px-3 py-1 bg-blue-600 text-white text-xs rounded-lg hover:bg-blue-700 transition-all duration-200 shadow-lg z-20 border border-white/20'
+											style={{
+												background: 'linear-gradient(135deg, #3b82f6, #1d4ed8)',
+												boxShadow: '0 4px 12px rgba(59, 130, 246, 0.4)'
+											}}
+											title='Извлечь текст из изображения'
+										>
+											📝 Извлечь текст
+										</button>
+									)}
+								</div>
+								<div className='flex items-center justify-between mt-2'>
+									<p className='text-xs text-gray-400'>
+										{message.image.file.name || 'Изображение'}
+									</p>
+									{/* Дополнительная кнопка извлечения текста */}
+									{message.role === 'user' && onExtractText && (
+										<button
+											onClick={() => onExtractText(message.image!)}
+											className='px-2 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700 transition-colors'
+											title='Извлечь текст из изображения'
+										>
+											📝 Извлечь текст
+										</button>
+									)}
+								</div>
 							</div>
 						)}
 
 						{/* Содержимое сообщения */}
-						<div className='text-sm leading-relaxed'>
-							{formatContent(message.content)}
-						</div>
+						{message.content && (
+							<div className='text-sm leading-relaxed'>
+								{formatContent(message.content)}
+							</div>
+						)}
 
 						{/* Действия и время сообщения */}
 						<div className='flex items-center justify-between mt-2'>

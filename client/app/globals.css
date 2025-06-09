@@ -453,3 +453,186 @@ body {
 		height: 32px;
 	}
 }
+
+/* ===== СТИЛИ ДЛЯ ИЗОБРАЖЕНИЙ ===== */
+.image-preview {
+	position: relative;
+	display: inline-block;
+	max-width: 100%;
+}
+
+.image-preview img {
+	max-width: 100%;
+	height: auto;
+	border-radius: var(--radius-lg);
+	border: 1px solid var(--border-primary);
+}
+
+.extract-text-button {
+	position: absolute;
+	top: 8px;
+	right: 8px;
+	padding: 6px 12px;
+	background: var(--accent-primary);
+	color: white;
+	border: none;
+	border-radius: var(--radius-md);
+	font-size: 12px;
+	font-weight: 500;
+	cursor: pointer;
+	transition: all var(--transition-fast);
+	box-shadow: var(--shadow-md);
+}
+
+.extract-text-button:hover {
+	background: var(--accent-hover);
+	transform: translateY(-1px);
+	box-shadow: var(--shadow-lg);
+}
+
+.extract-text-button:active {
+	transform: translateY(0);
+}
+
+/* Стили для drag & drop области */
+.drag-drop-area {
+	position: relative;
+	transition: all var(--transition-fast);
+}
+
+.drag-drop-overlay {
+	position: absolute;
+	inset: 0;
+	background: rgba(59, 130, 246, 0.1);
+	border: 2px dashed var(--accent-primary);
+	border-radius: var(--radius-lg);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	z-index: 10;
+	backdrop-filter: blur(2px);
+}
+
+.drag-drop-text {
+	color: var(--accent-primary);
+	font-weight: 500;
+	font-size: 14px;
+}
+
+/* Стили для превью прикрепленного изображения */
+.attached-image-preview {
+	background: var(--bg-tertiary);
+	border: 1px solid var(--border-primary);
+	border-radius: var(--radius-lg);
+	padding: 12px;
+	margin-bottom: 12px;
+}
+
+.attached-image-preview img {
+	width: 64px;
+	height: 64px;
+	object-fit: cover;
+	border-radius: var(--radius-md);
+	border: 1px solid var(--border-secondary);
+}
+
+.attached-image-info {
+	flex: 1;
+	min-width: 0;
+}
+
+.attached-image-name {
+	font-size: 13px;
+	color: var(--text-secondary);
+	margin-bottom: 8px;
+	word-break: break-all;
+}
+
+.attached-image-actions {
+	display: flex;
+	gap: 8px;
+}
+
+.remove-image-button {
+	padding: 4px 8px;
+	background: var(--accent-danger);
+	color: white;
+	border: none;
+	border-radius: var(--radius-sm);
+	font-size: 11px;
+	cursor: pointer;
+	transition: background-color var(--transition-fast);
+}
+
+.remove-image-button:hover {
+	background: #dc2626;
+}
+
+/* Стили для сообщений с изображениями */
+.message-image {
+	margin-bottom: 12px;
+}
+
+.message-image img {
+	max-width: 320px;
+	max-height: 240px;
+	object-fit: contain;
+	border-radius: var(--radius-lg);
+	border: 1px solid var(--border-secondary);
+}
+
+.message-image-info {
+	font-size: 11px;
+	color: var(--text-muted);
+	margin-top: 6px;
+}
+
+/* Анимации для загрузки */
+@keyframes pulse-glow {
+	0%, 100% {
+		opacity: 1;
+		box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.4);
+	}
+	50% {
+		opacity: 0.8;
+		box-shadow: 0 0 0 8px rgba(59, 130, 246, 0);
+	}
+}
+
+.animate-pulse-glow {
+	animation: pulse-glow 2s infinite;
+}
+
+/* Стили для кнопки извлечения текста в сообщениях */
+.message .extract-text-button {
+	position: absolute;
+	top: 8px;
+	right: 8px;
+	padding: 6px 12px;
+	font-size: 12px;
+	background: rgba(59, 130, 246, 0.95);
+	backdrop-filter: blur(4px);
+	border: 1px solid rgba(255, 255, 255, 0.2);
+	z-index: 20;
+}
+
+.message .extract-text-button:hover {
+	background: rgba(37, 99, 235, 1);
+	transform: scale(1.05);
+}
+
+/* Дополнительные стили для лучшей видимости */
+.message-image .relative {
+	position: relative;
+}
+
+.message-image .relative:hover .extract-text-button {
+	opacity: 1;
+	visibility: visible;
+}
+
+.extract-text-button {
+	opacity: 0.9;
+	visibility: visible;
+	transition: all 0.2s ease;
+}
