@@ -1,6 +1,19 @@
 {
-  "buildCommand": "cd client && npm install && npm run build",
-  "outputDirectory": "client/.next",
-  "framework": "nextjs",
-  "installCommand": "echo 'Skipping root install'"
+  "builds": [
+    {
+      "src": "client/package.json",
+      "use": "@vercel/next"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "client/$1"
+    }
+  ],
+  "functions": {
+    "client/app/**/*.{js,ts,jsx,tsx}": {
+      "runtime": "nodejs18.x"
+    }
+  }
 }
