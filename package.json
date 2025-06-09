@@ -1,0 +1,28 @@
+{
+  "name": "llmai",
+  "version": "1.0.0",
+  "description": "LLMAI - AI-powered application",
+  "private": true,
+  "scripts": {
+    "install:all": "cd client && npm install",
+    "build": "cd client && npm run build",
+    "start": "cd client && npm run start"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=8.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/danielpopas/LLMAI.git"
+  },
+  "keywords": [
+    "ai",
+    "llm",
+    "react",
+    "nextjs",
+    "typescript"
+  ],
+  "author": "InfoBlog",
+  "license": "MIT"
+}
