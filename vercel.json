@@ -1,12 +1,14 @@
 {
-  "version": 2,
-  "name": "llmai",
-  "buildCommand": "cd client && npm run build",
-  "outputDirectory": "client/.next",
-  "installCommand": "npm run install:all",
-  "framework": "nextjs",
-  "env": {
-    "NODE_ENV": "production",
-    "NEXT_TELEMETRY_DISABLED": "1"
-  }
+  "builds": [
+    {
+      "src": "client/package.json",
+      "use": "@vercel/next"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "client/$1"
+    }
+  ]
 }
