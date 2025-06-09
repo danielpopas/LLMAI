@@ -44,7 +44,7 @@ interface FutureModelsProps {
   onToggle: () => void
 }
 
-export default function FutureModels({ isExpanded, onToggle }: FutureModelsProps) {
+export default function FutureModels({ isExpanded }: FutureModelsProps) {
   const [expandedCategory, setExpandedCategory] = useState<string | null>(null)
 
   const toggleCategory = (category: string) => {

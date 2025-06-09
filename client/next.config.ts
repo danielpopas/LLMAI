@@ -1,17 +1,17 @@
 import type { NextConfig } from 'next'
 
 const nextConfig: NextConfig = {
-	// Отключаем SSR для устранения проблем гидратации
+	// client/next.config.ts
 	experimental: {
 		reactCompiler: false,
 	},
-	// Принудительное клиентское рендеринг
-	ssr: false,
 	// Оптимизация для SPA
 	trailingSlash: true,
 	images: {
 		unoptimized: true,
 	},
+	// Настройки для Vercel деплоя
+	output: 'standalone',
 }
 
 export default nextConfig

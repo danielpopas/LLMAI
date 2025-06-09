@@ -8,16 +8,6 @@ interface TextToSpeechProps {
   disabled?: boolean
 }
 
-declare global {
-  interface Window {
-    puter: {
-      ai: {
-        txt2speech: (text: string, options?: { voice?: string }) => Promise<Blob>
-      }
-    }
-  }
-}
-
 export default function TextToSpeech({ text, disabled }: TextToSpeechProps) {
   const [isPlaying, setIsPlaying] = useState(false)
   const [isLoading, setIsLoading] = useState(false)

@@ -9,30 +9,6 @@ import ToolsPanel from './ToolsPanel'
 import FutureModels from './FutureModels'
 import { useLocalStorage } from '../hooks/useLocalStorage'
 
-declare global {
-	interface Window {
-		puter: {
-			auth: {
-				isSignedIn: () => Promise<boolean>
-				signIn: () => Promise<unknown>
-			}
-			ai: {
-				chat: (
-					content: string,
-					options?: { model?: string; stream?: boolean }
-				) => Promise<
-					| {
-							message?: {
-								content?: Array<{ text?: string }>
-							}
-					  }
-					| string
-				>
-			}
-		}
-	}
-}
-
 export interface Message {
 	id: string
 	role: 'user' | 'assistant'
