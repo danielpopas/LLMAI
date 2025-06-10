@@ -192,7 +192,8 @@ export default function ChatInterfaceFixed() {
 
 			console.log('Sending message with image:', !!image, 'content:', content)
 
-			let response: unknown
+			// eslint-disable-next-line @typescript-eslint/no-explicit-any
+			let response: any
 
 			// Если есть изображение, используем chat API с изображением
 			if (image && image.preview) {
