@@ -9,12 +9,9 @@ const nextConfig: NextConfig = {
 	trailingSlash: true,
 	images: {
 		unoptimized: true,
-		remotePatterns: [
-			{
-				protocol: 'data',
-				hostname: '**',
-			},
-		],
+		dangerouslyAllowSVG: true,
+		contentDispositionType: 'attachment',
+		contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
 	},
 	// Настройки для Vercel
 	eslint: {
