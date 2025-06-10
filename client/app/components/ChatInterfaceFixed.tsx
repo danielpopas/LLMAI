@@ -59,7 +59,7 @@ export default function ChatInterfaceFixed() {
 			}
 			const byteArray = new Uint8Array(byteNumbers)
 			return new File([byteArray], fileName, { type: 'image/jpeg' })
-		} catch (error) {
+		} catch (error: any) {
 			console.error('Error restoring file from base64:', error)
 			return new File([], fileName, { type: 'image/jpeg' })
 		}
@@ -138,7 +138,7 @@ export default function ChatInterfaceFixed() {
 						extractedText: msg.image.extractedText,
 						fileData: base64Data,
 					}
-				} catch (error) {
+				} catch (error: any) {
 					console.error('Error converting file to base64:', error)
 					imageData = {
 						preview: msg.image.preview,
@@ -310,7 +310,7 @@ export default function ChatInterfaceFixed() {
 
 			// Сохраняем финальные сообщения
 			await saveMessages(finalMessages)
-		} catch (error) {
+		} catch (error: any) {
 			console.error('Ошибка отправки сообщения:', error)
 
 			let errorText = 'Извините, произошла ошибка при обработке вашего запроса.'
@@ -391,7 +391,7 @@ export default function ChatInterfaceFixed() {
 			const newMessages = [...messages, extractionMessage]
 			await saveMessages(newMessages)
 
-		} catch (error) {
+		} catch (error: any) {
 			console.error('Ошибка извлечения текста:', error)
 			console.error('Error type:', typeof error)
 			console.error('Error details:', {
