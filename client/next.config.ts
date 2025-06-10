@@ -9,6 +9,12 @@ const nextConfig: NextConfig = {
 	trailingSlash: true,
 	images: {
 		unoptimized: true,
+		remotePatterns: [
+			{
+				protocol: 'data',
+				hostname: '**',
+			},
+		],
 	},
 	// Настройки для Vercel
 	eslint: {

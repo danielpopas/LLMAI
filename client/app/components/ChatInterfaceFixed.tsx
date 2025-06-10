@@ -192,7 +192,7 @@ export default function ChatInterfaceFixed() {
 
 			console.log('Sending message with image:', !!image, 'content:', content)
 
-			let response: any
+			let response: unknown
 
 			// Если есть изображение, используем chat API с изображением
 			if (image && image.preview) {
@@ -360,8 +360,6 @@ export default function ChatInterfaceFixed() {
 				throw new Error('Файл изображения недоступен. Попробуйте загрузить изображение заново.')
 			}
 
-			let extractedText: string
-
 			// img2txt API ожидает URL изображения, а не File объект
 			// Используем preview (data URL) для всех случаев
 			console.log('Using img2txt API with preview URL...')
@@ -375,7 +373,7 @@ export default function ChatInterfaceFixed() {
 			console.log('img2txt API response:', response, 'type:', typeof response)
 
 			// img2txt возвращает строку с извлеченным текстом
-			extractedText = typeof response === 'string' ? response : 'Не удалось извлечь текст из изображения'
+			const extractedText = typeof response === 'string' ? response : 'Не удалось извлечь текст из изображения'
 
 			console.log('Final extracted text:', extractedText)
 

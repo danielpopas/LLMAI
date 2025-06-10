@@ -1,6 +1,7 @@
 // client/app/components/MessageList.tsx
 'use client'
 
+import Image from 'next/image'
 import { Message, ImageAttachment } from './ChatInterfaceFixed'
 import TextToSpeech from './TextToSpeech'
 
@@ -83,9 +84,11 @@ export default function MessageList({ messages, isLoading, onExtractText }: Mess
 						{message.image && (
 							<div className='mb-3'>
 								<div className='relative inline-block'>
-									<img
+									<Image
 										src={message.image.preview}
 										alt="Прикрепленное изображение"
+										width={384}
+										height={256}
 										className='max-w-sm max-h-64 object-contain rounded-lg border border-gray-600'
 									/>
 									{/* Кнопка извлечения текста */}

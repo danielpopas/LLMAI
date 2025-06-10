@@ -2,6 +2,7 @@
 'use client'
 
 import { useState, useRef, KeyboardEvent, DragEvent } from 'react'
+import Image from 'next/image'
 import { ImageAttachment } from './ChatInterfaceFixed'
 
 interface MessageInputProps {
@@ -125,9 +126,11 @@ export default function MessageInput({
 			{attachedImage && (
 				<div className="mb-3 p-3 bg-gray-700 rounded-lg">
 					<div className="flex items-start gap-3">
-						<img
+						<Image
 							src={attachedImage.preview}
 							alt="Прикрепленное изображение"
+							width={64}
+							height={64}
 							className="w-16 h-16 object-cover rounded-lg"
 						/>
 						<div className="flex-1">
